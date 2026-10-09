@@ -1,0 +1,16 @@
+{
+  "name": "domino-seu-ze",
+  "version": "1.0.0",
+  "description": "Brazilian block dominoes in the browser against Seu Zé, a bot that talks trash through a local Ollama model",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "author": "Daniel Fernandes",
+  "repository": { "type": "git", "url": "https://github.com/danielpsf/domino-seu-ze.git" },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "simulate": "node scripts/simulate.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

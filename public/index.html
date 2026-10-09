@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dominó</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #0a3d26;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+        
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1a5d3a;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .scoreboard {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .score-text {
+            font-size: 1rem;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        select, button {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: none;
+            background-color: #3a8c5d;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        select:hover, button:hover {
+            background-color: #4aa870;
+        }
+        
+        .opponent-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1a5d3a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .opp-tiles {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .opp-tile {
+            width: 40px;
+            height: 80px;
+            background-color: #d4c0a1;
+            border: 2px solid #8b4513;
+            border-radius: 6px;
+            transform: rotate(0deg);
+        }
+        
+        .speech-bubble {
+            background-color: #3a8c5d;
+            padding: 10px 15px;
+            border-radius: 20px;
+            max-width: 200px;
+            position: relative;
+            margin-left: 10px;
+        }
+        
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 20px;
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: #3a8c5d transparent transparent;
+        }
+        
+        .speech-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .board-container {
+            background-color: #2e7d5b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            min-height: 150px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+        
+        .board-tile {
+            width: 60px;
+            height: 120px;
+            background-color: #d4c0a1;
+            border: 2px solid #8b4513;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transform: rotate(0deg);
+        }
+        
+        .board-tile.double {
+            transform: rotate(90deg);
+        }
+        
+        .tile-half {
+            width: 50%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-right: 2px solid #8b4513;
+        }
+        
+        .tile-half:last-child {
+            border-right: none;
+        }
+        
+        .pip {
+            width: 10px;
+            height: 10px;
+            background-color: #333;
+            border-radius: 50%;
+        }
+        
+        .pip-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            width: 20px;
+            height: 20px;
+            gap: 2px;
+        }
+        
+        .hand-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .hand-tile {
+            width: 40px;
+            height: 80px;
+            background-color: #d4c0a1;
+            border: 2px solid #8b4513;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .hand-tile.playable {
+            opacity: 1;
+            box-shadow: 0 0 8px rgba(58, 140, 93, 0.7);
+        }
+        
+        .hand-tile.dimmed {
+            opacity: 0.5;
+        }
+        
+        .hand-tile:hover {
+            transform: translateY(-5px);
+        }
+        
+        .log-panel {
+            background-color: #1a5d3a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .result-card {
+            background-color: #1a5d3a;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 90%;
+        }
+        
+        .result-title {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+        }
+        
+        .result-text {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .opp-hand {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .opp-tile-small {
+            width: 25px;
+            height: 50px;
+            background-color: #d4c0a1;
+            border: 1px solid #8b4513;
+            border-radius: 4px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .action-button {
+            padding: 10px 20px;
+            font-size: 1rem;
+        }
+        
+        .thinking {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2rem;
+        }
+        
+        .footer {
+            text-align: center;
+            font-size: 0.8rem;
+            margin-top: auto;
+            padding: 10px;
+        }
+        
+        @media (max-width: 390px) {
+            .top-bar, .opponent-area, .board-container, .log-panel {
+                padding: 8px;
+            }
+            
+            .title {
+                font-size: 1.2rem;
+            }
+            
+            .score-text {
+                font-size: 0.9rem;
+            }
+            
+            select, button {
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+            
+            .board-tile {
+                width: 45px;
+                height: 90px;
+            }
+            
+            .hand-tile {
+                width: 30px;
+                height: 60px;
+            }
+        }
+            .dom { display: inline-flex; line-height: 0; }
+        .dom svg { display: block; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+        button.dom.hand { background: none; border: 0; padding: 4px; cursor: pointer; border-radius: 10px; transition: transform .12s; }
+        button.dom.hand.playable:hover { transform: translateY(-6px); }
+        button.dom.hand.playable { outline: 3px solid #f2c94c; outline-offset: -1px; }
+        button.dom.hand.dimmed { opacity: .45; cursor: not-allowed; }
+        .choice-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
+            body.busy { cursor: progress; }
+        .opp-hand { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin: 8px 0 16px; }
+        .board-container { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; justify-content: center; }
+            .score-text small { opacity: .75; }
+        @media (max-width: 600px) {
+            .top-bar { flex-wrap: wrap; gap: 8px; justify-content: space-between; }
+            .scoreboard { order: 3; flex-basis: 100%; text-align: center; font-size: 1.1rem; }
+            .controls { gap: 6px; }
+            .controls select, .controls button { padding: 6px 8px; font-size: .85rem; }
+            .opponent-area { flex-direction: column; align-items: stretch; gap: 8px; }
+            .opp-tiles { flex-wrap: wrap; gap: 4px; }
+            .opp-tile { width: 18px !important; height: 34px !important; }
+            .speech-bubble { max-width: none; }
+            button.dom.hand svg { width: 30px; height: 60px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="title">Dominó</div>
+        <div class="scoreboard">
+            <span class="score-text">Você <span id="player-score">0</span> × <span id="bot-score">0</span> Seu Zé <small>(até 6)</small></span>
+        </div>
+        <div class="controls">
+            <select id="difficulty-select">
+                <option value="facil">Fácil</option>
+                <option value="medio" selected>Médio</option>
+                <option value="dificil">Difícil</option>
+                <option value="mestre">Mestre</option>
+            </select>
+            <button id="new-game-btn">Nova partida</button>
+        </div>
+    </div>
+
+    <div class="opponent-area">
+        <div class="opp-tiles" id="opp-tiles"></div>
+        <div class="speech-bubble">
+            <div class="speech-label">Seu Zé:</div>
+            <div id="speech-text">Seu Zé está pensando...</div>
+        </div>
+    </div>
+
+    <div class="board-container" id="board-container"></div>
+
+    <div class="hand-container" id="hand-container"></div>
+
+    <div class="log-panel" id="log-panel"></div>
+
+    <div class="footer">
+        IA local: <span id="model-name">-</span> via Ollama
+    </div>
+
+    <script type="module">
+        // Game state
+        let gameState = null;
+        let thinking = false;
+
+        // DOM Elements
+        const difficultySelect = document.getElementById('difficulty-select');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const playerScoreEl = document.getElementById('player-score');
+        const botScoreEl = document.getElementById('bot-score');
+        const oppTilesEl = document.getElementById('opp-tiles');
+        const speechTextEl = document.getElementById('speech-text');
+        const boardContainer = document.getElementById('board-container');
+        const handContainer = document.getElementById('hand-container');
+        const logPanel = document.getElementById('log-panel');
+        const modelNameEl = document.getElementById('model-name');
+
+        // Update UI based on game state
+        function updateUI() {
+            if (!gameState) return;
+            
+            // Update scores
+            playerScoreEl.textContent = gameState.score[0];
+            botScoreEl.textContent = gameState.score[1];
+            
+            // Update opponent area
+            updateOpponentArea();
+            
+            // Update board
+            updateBoard();
+            
+            // Update hand
+            updateHand();
+            
+            updateLog();
+            const sel = difficultySelect.querySelector(`option[value="${gameState.difficulty}"]`);
+            if (sel) sel.selected = true;
+            
+            // Update model name
+            modelNameEl.textContent = gameState.model;
+            
+            if (gameState.handResult) showResult();
+        }
+
+        function updateOpponentArea() {
+            // Update opponent tiles count
+            oppTilesEl.innerHTML = '';
+            for (let i = 0; i < gameState.oppCount; i++) {
+                const tileEl = document.createElement('div');
+                tileEl.className = 'opp-tile';
+                oppTilesEl.appendChild(tileEl);
+            }
+            
+            // Update speech bubble
+            if (gameState.events.length > 0) {
+                const lastEvent = gameState.events[gameState.events.length - 1];
+                if (lastEvent.fala) {
+                    speechTextEl.textContent = lastEvent.fala;
+                } else if (lastEvent.move === null) {
+                    speechTextEl.textContent = 'Seu Zé passou';
+                }
+            }
+        }
+
+        const PIPS = {
+            0: [], 1: [[1, 1]], 2: [[0, 0], [2, 2]], 3: [[0, 0], [1, 1], [2, 2]],
+            4: [[0, 0], [2, 0], [0, 2], [2, 2]], 5: [[0, 0], [2, 0], [1, 1], [0, 2], [2, 2]],
+            6: [[0, 0], [0, 1], [0, 2], [2, 0], [2, 1], [2, 2]],
+        };
+        const sameTile = (x, y) => (x[0] === y[0] && x[1] === y[1]) || (x[0] === y[1] && x[1] === y[0]);
+
+        // Draws a domino as SVG. vertical: halves stacked (a on top); else side by side (a on the left).
+        function tileSVG([a, b], vertical, size) {
+            const S = 40, W = vertical ? S : 2 * S, H = vertical ? 2 * S : S;
+            const half = (n, ox, oy) => PIPS[n].map(([c, r]) =>
+                `<circle cx="${ox + 8 + c * 12}" cy="${oy + 8 + r * 12}" r="4" fill="#1d1d1b"/>`).join('');
+            const divider = vertical
+                ? `<line x1="5" y1="${S}" x2="${S - 5}" y2="${S}" stroke="#8a7a5c" stroke-width="1.5"/>`
+                : `<line x1="${S}" y1="5" x2="${S}" y2="${S - 5}" stroke="#8a7a5c" stroke-width="1.5"/>`;
+            const second = vertical ? half(b, 0, S) : half(b, S, 0);
+            return `<svg viewBox="0 0 ${W} ${H}" width="${size * W / S}" height="${size * H / S}" aria-label="[${a}|${b}]" role="img">
+                <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="6" fill="#f6efdc" stroke="#6b5a3a" stroke-width="1.5"/>
+                ${divider}${half(a, 0, 0)}${second}</svg>`;
+        }
+
+        function updateBoard() {
+            boardContainer.innerHTML = gameState.board.map((t) =>
+                `<span class="dom">${tileSVG(t, t[0] === t[1], 26)}</span>`).join('');
+        }
+
+        function updateHand() {
+            handContainer.innerHTML = '';
+            gameState.myHand.forEach((tile) => {
+                const moves = gameState.myMoves.filter((m) => sameTile(m.tile, tile));
+                const btn = document.createElement('button');
+                btn.className = 'dom hand ' + (moves.length ? 'playable' : 'dimmed');
+                btn.innerHTML = tileSVG(tile, true, 34);
+                btn.disabled = !moves.length || thinking;
+                btn.title = moves.length ? 'Jogar esta peça' : 'Sem encaixe';
+                btn.addEventListener('click', () => handleTileClick(tile));
+                handContainer.appendChild(btn);
+            });
+        }
+
+        function handleTileClick(tile) {
+            document.querySelectorAll('.choice-row').forEach((el) => el.remove());
+            const options = gameState.myMoves
+                .map((m, i) => ({ m, i }))
+                .filter(({ m }) => sameTile(m.tile, tile));
+            if (options.length === 1) return playMove(options[0].i);
+            const row = document.createElement('div');
+            row.className = 'choice-row';
+            for (const { m, i } of options) {
+                const b = document.createElement('button');
+                b.className = 'action-button';
+                b.textContent = m.end === 'left' ? '← Esquerda' : 'Direita →';
+                b.addEventListener('click', () => playMove(i));
+                row.appendChild(b);
+            }
+            handContainer.after(row);
+        }
+
+        async function playMove(moveIndex) {
+            if (thinking) return;
+            document.querySelectorAll('.choice-row').forEach((el) => el.remove());
+            setThinking(true);
+            try {
+                const res = await fetch('/api/play', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: gameState.id, moveIndex }),
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                gameState = data;
+            } catch (error) {
+                addLogEntry('Erro: ' + error.message);
+            }
+            setThinking(false);
+            updateUI();
+        }
+
+        function updateLog() {
+            for (const event of gameState.events) {
+                const who = event.who === 'human' ? 'Você' : 'Seu Zé';
+                let text;
+                if (event.move) {
+                    const [x, y] = event.move.tile;
+                    text = `${who} jogou [${x}|${y}] na ${event.move.end === 'left' ? 'esquerda' : 'direita'}`;
+                } else {
+                    text = `${who} passou${event.source === 'auto-pass' ? ' (sem jogada)' : ''}`;
+                }
+                if (event.source === 'llm') text += ' 🧠';
+                addLogEntry(text);
+            }
+        }
+
+        const KIND = {
+            'batida': 'Batida!', 'batida de carroça': 'Batida de carroça!',
+            'trancado': 'Jogo trancado!', 'trancado empatado': 'Trancado e empatado!',
+        };
+
+        function showResult() {
+            document.querySelectorAll('.overlay').forEach((el) => el.remove());
+            const r = gameState.handResult;
+            const matchOver = gameState.matchWinner !== null;
+            const who = r.winner === 0 ? 'Você marcou' : r.winner === 1 ? 'Seu Zé marcou' : 'Ninguém marcou';
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = `<div class="result-card">
+                <div class="result-title">${matchOver
+                    ? (gameState.matchWinner === 0 ? 'Você venceu a partida! 🎉' : 'Seu Zé venceu a partida!')
+                    : KIND[r.kind] || r.kind}</div>
+                <div class="result-text">${matchOver ? (KIND[r.kind] || r.kind) + ' · ' : ''}${who} ${r.points} ponto${r.points === 1 ? '' : 's'}.</div>
+                <div class="result-text">Placar: Você ${gameState.score[0]} × ${gameState.score[1]} Seu Zé</div>
+                <div class="speech-label">Seu Zé ficou com:</div>
+                <div class="opp-hand">${r.oppHand.length ? r.oppHand.map((t) => `<span class="dom">${tileSVG(t, true, 18)}</span>`).join('') : '<em>nada, bateu!</em>'}</div>
+                <button class="action-button">${matchOver ? 'Jogar de novo' : 'Próxima mão'}</button>
+            </div>`;
+            overlay.querySelector('button').addEventListener('click', async () => {
+                overlay.remove();
+                if (matchOver) return startMatch();
+                await call('/api/next', { id: gameState.id });
+            });
+            document.body.appendChild(overlay);
+        }
+
+        function addLogEntry(text) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = text;
+            logPanel.prepend(entry);
+            while (logPanel.children.length > 40) logPanel.lastChild.remove();
+        }
+
+        function setThinking(on) {
+            thinking = on;
+            document.body.classList.toggle('busy', on);
+            speechTextEl.textContent = on ? 'Seu Zé está pensando…' : 'Sua vez, parceiro.';
+            newGameBtn.disabled = on;
+            document.querySelectorAll('button.dom.hand').forEach((b) => { if (on) b.disabled = true; });
+        }
+
+        async function call(path, payload) {
+            setThinking(true);
+            try {
+                const res = await fetch(path, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                gameState = data;
+            } catch (error) {
+                addLogEntry('Erro: ' + error.message);
+            }
+            setThinking(false);
+            updateUI();
+        }
+
+        async function startMatch() {
+            document.querySelectorAll('.overlay').forEach((el) => el.remove());
+            logPanel.innerHTML = '';
+            await call('/api/new', { difficulty: difficultySelect.value });
+            addLogEntry(`Nova partida — nível ${difficultySelect.selectedOptions[0].textContent}. Até 6 pontos.`);
+        }
+
+        newGameBtn.addEventListener('click', startMatch);
+        startMatch();
+    </script>
+</body>
+</html>
